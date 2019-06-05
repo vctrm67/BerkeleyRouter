@@ -6,7 +6,7 @@ import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * Graph for storing all of the intersection (vertex) and road (edge) information.
@@ -26,6 +26,27 @@ public class GraphDB {
      * You do not need to modify this constructor, but you're welcome to do so.
      * @param dbPath Path to the XML file to be parsed.
      */
+    private class Node {
+        public long iden;
+        public double lon;
+        public double lat;
+        public String name;
+        public ArrayList<Long> neighbors;
+
+        private Node(Map<String, String> newNode) {
+            iden = Long.parseLong(newNode.get("id"));
+            lon = Double.parseDouble(newNode.get("lon"));
+            lat = Double.parseDouble(newNode.get("lat"));
+            if (newNode.containsKey("name")) {
+                name = cleanString(newNode.get("name"));
+            } else {
+                name = null;
+            }
+
+            neighbors = new ArrayList<>();
+        }
+    }
+
     public GraphDB(String dbPath) {
         try {
             File inputFile = new File(dbPath);
@@ -42,6 +63,8 @@ public class GraphDB {
         clean();
     }
 
+    public Map<Long, Node> key = new HashMap<>();
+
     /**
      * Helper to process strings into their "cleaned" form, ignoring punctuation and capitalization.
      * @param s Input string.
@@ -51,13 +74,36 @@ public class GraphDB {
         return s.replaceAll("[^a-zA-Z ]", "").toLowerCase();
     }
 
+    public void addNode(Map<String, String> input) {
+        Node node = new Node(input);
+        key.put(node.iden, node);
+    }
+
+    public void addEdge(String input1, String input2) {
+        long iden1 = Long.parseLong(input1);
+        long iden2 = Long.parseLong(input2);
+
+        key.get(iden1).neighbors.add(iden2);
+        key.get(iden2).neighbors.add(iden1);
+    }
+
+    public void removeNode(String v) {
+        long w = Long.parseLong(v);
+        key.remove(w);
+    }
+
     /**
      *  Remove nodes with no connections from the graph.
      *  While this does not guarantee that any two nodes in the remaining graph are connected,
      *  we can reasonably assume this since typically roads are connected.
      */
     private void clean() {
-        // TODO: Your code here.
+        Set<Long> keys = new HashSet<>(key.keySet());
+        for (long i : keys) {
+            if (key.get(i).neighbors.size() == 0) {
+                key.remove(i);
+            }
+        }
     }
 
     /**
@@ -66,7 +112,7 @@ public class GraphDB {
      */
     Iterable<Long> vertices() {
         //YOUR CODE HERE, this currently returns only an empty list.
-        return new ArrayList<Long>();
+        return key.keySet();
     }
 
     /**
@@ -75,7 +121,7 @@ public class GraphDB {
      * @return An iterable of the ids of the neighbors of v.
      */
     Iterable<Long> adjacent(long v) {
-        return null;
+        return key.get(v).neighbors;
     }
 
     /**
@@ -136,7 +182,15 @@ public class GraphDB {
      * @return The id of the node in the graph closest to the target.
      */
     long closest(double lon, double lat) {
-        return 0;
+        long closest = 0;
+        double distance = Double.MAX_VALUE;
+        for (Node i : key.values()) {
+            if (distance(lon, lat, i.lon, i.lat) < distance) {
+                distance = distance(lon, lat, i.lon, i.lat);
+                closest = i.iden;
+            }
+        }
+        return closest;
     }
 
     /**
@@ -145,7 +199,7 @@ public class GraphDB {
      * @return The longitude of the vertex.
      */
     double lon(long v) {
-        return 0;
+        return key.get(v).lon;
     }
 
     /**
@@ -154,6 +208,7 @@ public class GraphDB {
      * @return The latitude of the vertex.
      */
     double lat(long v) {
-        return 0;
+        return key.get(v).lat;
     }
+
 }

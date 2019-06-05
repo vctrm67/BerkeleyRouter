@@ -1,10 +1,9 @@
+import edu.princeton.cs.algs4.Edge;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  *  Parses OSM XML files using an XML SAX parser. Used to construct the graph of roads for
@@ -38,6 +37,9 @@ public class GraphBuildingHandler extends DefaultHandler {
                     "secondary_link", "tertiary_link"));
     private String activeState = "";
     private final GraphDB g;
+    private Map<String, String> node;
+    private ArrayList<String> edgeList = new ArrayList<>();
+    private boolean end = false;
 
     /**
      * Create a new GraphBuildingHandler.
@@ -70,10 +72,18 @@ public class GraphBuildingHandler extends DefaultHandler {
             activeState = "node";
 //            System.out.println("Node id: " + attributes.getValue("id"));
 //            System.out.println("Node lon: " + attributes.getValue("lon"));
-//            System.out.println("Node lat: " + attributes.getValue("lat"));
+            //System.out.println("Node lat: " + attributes.getValue("lat"));
 
             /* TODO Use the above information to save a "node" to somewhere. */
             /* Hint: A graph-like structure would be nice. */
+
+            node = new HashMap<>();
+            node.put("id", attributes.getValue("id"));
+            node.put("lon", attributes.getValue("lon"));
+            node.put("lat", attributes.getValue("lat"));
+            g.addNode(node);
+
+            //Replace with addNode when filling out GraphDB class.
 
         } else if (qName.equals("way")) {
             /* We encountered a new <way...> tag. */
@@ -90,17 +100,19 @@ public class GraphBuildingHandler extends DefaultHandler {
             makes this way invalid. Instead, think of keeping a list of possible connections and
             remember whether this way is valid or not. */
 
+            edgeList.add(attributes.getValue("ref"));
+
         } else if (activeState.equals("way") && qName.equals("tag")) {
             /* While looking at a way, we found a <tag...> tag. */
             String k = attributes.getValue("k");
             String v = attributes.getValue("v");
             if (k.equals("maxspeed")) {
                 //System.out.println("Max Speed: " + v);
-                /* TODO set the max speed of the "current way" here. */
             } else if (k.equals("highway")) {
                 //System.out.println("Highway type: " + v);
                 /* TODO Figure out whether this way and its connections are valid. */
                 /* Hint: Setting a "flag" is good enough! */
+                if (ALLOWED_HIGHWAY_TYPES.contains(v)) { end = true; }
             } else if (k.equals("name")) {
                 //System.out.println("Way Name: " + v);
             }
@@ -113,7 +125,12 @@ public class GraphBuildingHandler extends DefaultHandler {
             node this tag belongs to. Remember XML is parsed top-to-bottom, so probably it's the
             last node that you looked at (check the first if-case). */
 //            System.out.println("Node's name: " + attributes.getValue("v"));
+
+            g.removeNode(node.get("id"));
+            node.put("name", attributes.getValue("v"));
+            g.addNode(node);
         }
+
     }
 
     /**
@@ -134,6 +151,13 @@ public class GraphBuildingHandler extends DefaultHandler {
             /* Hint1: If you have stored the possible connections for this way, here's your
             chance to actually connect the nodes together if the way is valid. */
 //            System.out.println("Finishing a way...");
+            if (end) {
+                for (int i = 0; i < (edgeList.size() - 1); i += 1) {
+                    g.addEdge(edgeList.get(i), edgeList.get(i + 1));
+                }
+            }
+            edgeList = new ArrayList<>();
+            end = false;
         }
     }
 
