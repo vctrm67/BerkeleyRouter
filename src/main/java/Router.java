@@ -1,5 +1,4 @@
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,9 +22,72 @@ public class Router {
      * @param destlat The latitude of the destination location.
      * @return A list of node id's in the order visited on the shortest path.
      */
+
+    private static class Node implements Comparable<Node>{
+        public long iden;
+        public Node previous;
+        public double distance;
+        public double circleDist;
+
+        private Node(long a, Node b, double c, double d) {
+            iden = a;
+            previous = b;
+            distance = c;
+            circleDist = d;
+        }
+
+        @Override
+        public int compareTo(Node x) {
+            if ((distance + circleDist) - (x.distance + x.circleDist) > 0) {
+                return 1;
+            } else if ((distance + circleDist) - (x.distance + x.circleDist) < 0) {
+                return -1;
+            } else
+                return 0;
+        }
+    }
+
     public static List<Long> shortestPath(GraphDB g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        return null; // FIXME
+        Queue<Node> fringe = new PriorityQueue<>();
+        Map<Long, Node> key = new HashMap<>();
+        long start = g.closest(stlon, stlat);
+        long end = g.closest(destlon, destlat);
+        Node place = new Node(start, null, 0, 0);
+        fringe.add(place);
+        key.put(start, place);
+
+        for (long i : g.vertices()) {
+            if (i != start) {
+                place = new Node(i, null, Double.POSITIVE_INFINITY, g.distance(i, end));
+                fringe.add(place);
+                key.put(i, place);
+            }
+        }
+
+        Node currentNode = fringe.poll();
+        while (currentNode.iden != end) {
+            for (long i : g.adjacent(currentNode.iden)) {
+                place = key.get(i);
+                if (currentNode.distance + g.distance(currentNode.iden, place.iden) < place.distance) {
+                    fringe.remove(place);
+                    place.distance = currentNode.distance + g.distance(currentNode.iden, place.iden);
+                    place.previous = currentNode;
+                    fringe.add(place);
+                }
+            }
+
+            currentNode = fringe.poll();
+        }
+
+        List<Long> solution = new ArrayList<>();
+        solution.add(currentNode.iden);
+        while (currentNode.previous != null) {
+            currentNode = currentNode.previous;
+            solution.add(0, currentNode.iden);
+        }
+
+        return solution; // FIXME
     }
 
     /**
