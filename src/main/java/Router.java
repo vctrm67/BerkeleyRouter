@@ -154,7 +154,6 @@ public class Router {
         }
 
         System.out.println(gps.size());
-        System.out.println()
 
 
         return gps; // FIXME
