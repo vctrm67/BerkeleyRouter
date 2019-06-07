@@ -32,6 +32,7 @@ public class GraphDB {
         public double lat;
         public String name;
         public ArrayList<Long> neighbors;
+        public Set<String> streets;
 
         private Node(Map<String, String> newNode) {
             iden = Long.parseLong(newNode.get("id"));
@@ -44,6 +45,7 @@ public class GraphDB {
             }
 
             neighbors = new ArrayList<>();
+            streets = new HashSet<>();
         }
     }
 
@@ -63,7 +65,8 @@ public class GraphDB {
         clean();
     }
 
-    public Map<Long, Node> key = new HashMap<>();
+    private Map<Long, Node> key = new HashMap<>();
+    public int maxStreet = 0;
 
     /**
      * Helper to process strings into their "cleaned" form, ignoring punctuation and capitalization.
@@ -79,18 +82,22 @@ public class GraphDB {
         key.put(node.iden, node);
     }
 
-    public void addEdge(String input1, String input2) {
+    public void addEdge(String input1, String input2, String name) {
         long iden1 = Long.parseLong(input1);
         long iden2 = Long.parseLong(input2);
 
         key.get(iden1).neighbors.add(iden2);
         key.get(iden2).neighbors.add(iden1);
+
+        key.get(iden1).streets.add(name);
+        key.get(iden2).streets.add(name);
     }
 
     public void removeNode(String v) {
         long w = Long.parseLong(v);
         key.remove(w);
     }
+
 
     /**
      *  Remove nodes with no connections from the graph.
@@ -209,6 +216,10 @@ public class GraphDB {
      */
     double lat(long v) {
         return key.get(v).lat;
+    }
+
+    Set<String> getStreets(long v) {
+        return key.get(v).streets;
     }
 
 }

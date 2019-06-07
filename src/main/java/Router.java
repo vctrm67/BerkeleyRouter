@@ -95,11 +95,91 @@ public class Router {
      * @param g The graph to use.
      * @param route The route to translate into directions. Each element
      *              corresponds to a node from the graph in the route.
-     * @return A list of NavigatiionDirection objects corresponding to the input
+     * @return A list of NavigationDirection objects corresponding to the input
      * route.
      */
     public static List<NavigationDirection> routeDirections(GraphDB g, List<Long> route) {
-        return null; // FIXME
+        List<NavigationDirection> gps = new ArrayList<>();
+        double current_bearing;
+        double previous_bearing = g.bearing(route.get(0), route.get(1));
+        int direction = 0;
+        boolean change = true;
+        Set<String> currentStreets = new HashSet<>(g.getStreets(route.get(1)));
+        currentStreets.retainAll(g.getStreets(route.get(0)));
+        String currentWay = currentStreets.toArray(new String[0])[0];
+
+        for (int i = 1; i < route.size(); i++) {
+            long current = route.get(i);
+            long previous = route.get(i - 1);
+/*
+            for (String k : g.getStreets(current)) {
+                System.out.println(k);
+                System.out.println(route.get(i));
+            }
+            for (String j : currentStreets) {
+                System.out.println(j);
+                System.out.println(route.get(i - 1));
+            }
+            System.out.println("");
+
+ */
+            boolean sameStreet = g.getStreets(current).contains(currentWay);
+            current_bearing = g.bearing(previous, current);
+            double bearing_diff = current_bearing - previous_bearing;
+
+            if (gps.isEmpty()) {
+                direction = 0;
+            } else if (sameStreet) {
+                    gps.get(gps.size() - 1).distance += g.distance(current, previous);
+            } else {
+                direction = getDirections(bearing_diff);
+                change = true;
+            }
+
+            if (change) {
+                currentStreets = new HashSet<>(g.getStreets(route.get(i)));
+                currentStreets.retainAll(g.getStreets(route.get(i - 1)));
+                currentWay = currentStreets.toArray(new String[0])[0];
+
+                NavigationDirection newDirection = new NavigationDirection();
+                newDirection.direction = direction;
+                newDirection.distance = g.distance(current, previous);
+                newDirection.way = currentWay;
+                gps.add(newDirection);
+
+                change = false;
+            }
+
+            previous_bearing = current_bearing;
+        }
+
+        System.out.println(gps.size());
+        System.out.println()
+
+
+        return gps; // FIXME
+    }
+
+    private static int getDirections(double bearing) {
+        double absBearing = Math.abs(bearing);
+
+        if (absBearing > 180) {
+            absBearing = 360 - absBearing;
+            bearing *= -1;
+        }
+
+        if (absBearing <= 15) {
+            return NavigationDirection.STRAIGHT;
+        }
+        if (absBearing <= 30) {
+            return bearing < 0 ? NavigationDirection.SLIGHT_LEFT : NavigationDirection.SLIGHT_RIGHT;
+        }
+        if (absBearing <= 100) {
+            return bearing < 0 ? NavigationDirection.LEFT : NavigationDirection.RIGHT;
+        }
+        else {
+            return bearing < 0 ? NavigationDirection.SHARP_LEFT : NavigationDirection.SHARP_RIGHT;
+        }
     }
 
 

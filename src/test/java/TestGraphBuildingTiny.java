@@ -29,6 +29,7 @@ public class TestGraphBuildingTiny {
         }
 
         graphTiny = new GraphDB(OSM_DB_PATH_TINY);
+        System.out.println(graphTiny.maxStreet);
         initialized = true;
     }
 

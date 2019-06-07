@@ -40,6 +40,7 @@ public class GraphBuildingHandler extends DefaultHandler {
     private Map<String, String> node;
     private ArrayList<String> edgeList = new ArrayList<>();
     private boolean end = false;
+    private boolean name = false;
 
     /**
      * Create a new GraphBuildingHandler.
@@ -114,7 +115,8 @@ public class GraphBuildingHandler extends DefaultHandler {
                 /* Hint: Setting a "flag" is good enough! */
                 if (ALLOWED_HIGHWAY_TYPES.contains(v)) { end = true; }
             } else if (k.equals("name")) {
-                //System.out.println("Way Name: " + v);
+                name = true;
+                edgeList.add(v);
             }
 //            System.out.println("Tag with k=" + k + ", v=" + v + ".");
         } else if (activeState.equals("node") && qName.equals("tag") && attributes.getValue("k")
@@ -152,12 +154,19 @@ public class GraphBuildingHandler extends DefaultHandler {
             chance to actually connect the nodes together if the way is valid. */
 //            System.out.println("Finishing a way...");
             if (end) {
-                for (int i = 0; i < (edgeList.size() - 1); i += 1) {
-                    g.addEdge(edgeList.get(i), edgeList.get(i + 1));
+                if (!name) {
+                    for (int i = 0; i < (edgeList.size() - 1); i += 1) {
+                        g.addEdge(edgeList.get(i), edgeList.get(i + 1), "");
+                    }
+                } else {
+                    for (int i = 0; i < (edgeList.size() - 2); i += 1) {
+                        g.addEdge(edgeList.get(i), edgeList.get(i + 1), edgeList.get(edgeList.size() - 1));
+                    }
                 }
             }
             edgeList = new ArrayList<>();
             end = false;
+            name = false;
         }
     }
 
