@@ -18,13 +18,9 @@ import java.util.*;
  * @author Alan Yao, Josh Hug
  */
 public class GraphDB {
-    /** Your instance variables for storing the graph. You should consider
-     * creating helper classes, e.g. Node, Edge, etc. */
-
     /**
-     * Example constructor shows how to create and start an XML parser.
-     * You do not need to modify this constructor, but you're welcome to do so.
-     * @param dbPath Path to the XML file to be parsed.
+     * The creation of a private node class, in order to store important information that accompanies every single
+     * node.
      */
     private class Node {
         public long iden;
@@ -50,6 +46,10 @@ public class GraphDB {
             streets = new HashMap<>();
         }
     }
+    /**
+     * Example constructor shows how to create and start an XML parser.
+     * @param dbPath Path to the XML file to be parsed.
+     */
 
     public GraphDB(String dbPath) {
         try {
@@ -64,12 +64,23 @@ public class GraphDB {
         } catch (ParserConfigurationException | SAXException | IOException e) {
             e.printStackTrace();
         }
+
         clean();
     }
 
+    /**
+     * The main data structures that hold important information relating different names, nodes, and locations together.
+     * @variable key: A mapping of the node identifier to the Node object, after cleaning.
+     * @variable totalKey: A mapping of all nodes to the Node object, before cleaning. This is important for searching
+     * nodes, by which all nodes should be able to be returned regardless if they are connected by ways.
+     * @variable nameKey: A mapping of the cleaned name to the actual name for every node.
+     * @variable locationKey: A mapping of the cleaned name to a list of possible node locations that correspond to that
+     * name.
+     */
     private Map<Long, Node> key = new HashMap<>();
+    private Map<Long, Node> totalKey = new HashMap<>();
     public Map<String, String> nameKey = new HashMap<>();
-    public int maxStreet = 0;
+    public Map<String, List<Long>> locationKey= new HashMap<>();
 
     /**
      * Helper to process strings into their "cleaned" form, ignoring punctuation and capitalization.
@@ -83,10 +94,21 @@ public class GraphDB {
     public void addNode(Map<String, String> input) {
         Node node = new Node(input);
         key.put(node.iden, node);
+        totalKey.put(node.iden, node);
 
         if (node.name != null) {
             nameKey.put(node.name, node.actualName);
+
+            if (!locationKey.keySet().contains(node.name)) {
+                List<Long> locations = new ArrayList<>();
+                locations.add(node.iden);
+                locationKey.put(node.name, locations);
+            } else {
+                List<Long> locations = locationKey.get(node.name);
+                locations.add(node.iden);
+            }
         }
+
     }
 
     public void addEdge(String input1, String input2, String name) {
@@ -213,7 +235,7 @@ public class GraphDB {
      * @return The longitude of the vertex.
      */
     double lon(long v) {
-        return key.get(v).lon;
+        return totalKey.get(v).lon;
     }
 
     /**
@@ -222,7 +244,7 @@ public class GraphDB {
      * @return The latitude of the vertex.
      */
     double lat(long v) {
-        return key.get(v).lat;
+        return totalKey.get(v).lat;
     }
 
     Map<Long, String> getStreets(long v) {
@@ -234,6 +256,6 @@ public class GraphDB {
     }
 
     String getName(long v) {
-        return key.get(v).name;
+        return totalKey.get(v).name;
     }
 }

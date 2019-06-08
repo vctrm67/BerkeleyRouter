@@ -3,9 +3,7 @@ import java.util.Map;
 
 /**
  * This class provides all code necessary to take a query box and produce
- * a query result. The getMapRaster method must return a Map containing all
- * seven of the required fields, otherwise the front end code will probably
- * not draw the output correctly.
+ * a query result.
  */
 public class Rasterer {
 
@@ -27,7 +25,7 @@ public class Rasterer {
      *     grid is referred to as a "tile".
      *     <ul>
      *         <li>The tiles collected must cover the most longitudinal distance per pixel
-     *         (LonDPP) possible, while still covering less than or equal to the amount of
+     *         (LDPP) possible, while still covering less than or equal to the amount of
      *         longitudinal distance per pixel in the query box for the user viewport size. </li>
      *         <li>Contains all tiles that intersect the query bounding box that fulfill the
      *         above condition.</li>
@@ -48,13 +46,14 @@ public class Rasterer {
      *                    forget to set this to true on success! <br>
      */
     public Map<String, Object> getMapRaster(Map<String, Double> params) {
-
+        //Calculating the user input LDPP and the corresponding depth of zoom (at a maximum level of 7).
         double user_LDPP = Math.abs(params.get("ullon") - params.get("lrlon")) / (params.get("w"));
         int depth = (int) Math.ceil(Math.log(tMap_LDPP / user_LDPP) / Math.log(2.0));
         if (depth > 7) {
             depth = 7;
         }
 
+        //Making sure that the user query are within the boundaries of available data.
         if (params.get("ullon") < MapServer.ROOT_ULLON) {
             ul_lon = MapServer.ROOT_ULLON;
         } else {
@@ -78,6 +77,7 @@ public class Rasterer {
         qb_height = params.get("h");
         qb_width = params.get("w");
 
+        //Calculating which corresponding tiles are needed from the backend for display.
         double lonTile_Dist = total_Lon / Math.pow(2, depth);
         double latTile_Dist = total_Lat / Math.pow(2, depth);
 
@@ -99,6 +99,7 @@ public class Rasterer {
         int x_index = x_lower;
         int y_index = y_lower;
 
+        //Passing those tile files back to the front end.
         for (int i = 0; i <= (y_upper - y_lower); i += 1) {
             for (int j = 0; j <= (x_upper - x_lower); j += 1) {
                 tiles[i][j] = "d" + depth + "_x" + x_index + "_y" + y_index + ".png";
@@ -126,6 +127,11 @@ public class Rasterer {
         return results;
     }
 
+    /**
+     * Testing whether or not the user query is valid within reason, and that no query has abnormal longitude and
+     * latitude coordinates that are beyond available data.
+     * @return
+     */
     private boolean testValid() {
         if (ul_lon > lr_lon || ul_lat < lr_lat) {
             return false;

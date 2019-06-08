@@ -331,8 +331,22 @@ public class MapServer {
      * "id" : Number, The id of the node. <br>
      */
     public static List<Map<String, Object>> getLocations(String locationName) {
+        List<Map<String, Object>> places = new ArrayList<>();
+        String cleanedName = locationName.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
 
-        return new LinkedList<>();
+        Map<String, Object> data = new HashMap<>();
+        List<Long> locations = graph.locationKey.get(cleanedName);
+        for (long i : locations) {
+            System.out.println(i);
+            System.out.println(graph.lat(i));
+            data.put("lat", graph.lat(i));
+            data.put("lon", graph.lon(i));
+            data.put("name", graph.nameKey.get(graph.getName(i)));
+            data.put("id", i);
+            places.add(data);
+        }
+
+        return places;
     }
 
     /**

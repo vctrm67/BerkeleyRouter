@@ -16,17 +16,10 @@ import java.util.regex.Pattern;
 
 public class Router {
     /**
-     * Return a List of longs representing the shortest path from the node
-     * closest to a start location and the node closest to the destination
-     * location.
-     * @param g The graph to use.
-     * @param stlon The longitude of the start location.
-     * @param stlat The latitude of the start location.
-     * @param destlon The longitude of the destination location.
-     * @param destlat The latitude of the destination location.
-     * @return A list of node id's in the order visited on the shortest path.
+     * The creation of a new Node class that is used for the A* search algorithm. All necessary information about
+     * a particular node/vertex has been packaged into this Node class, so that the A* search does not have to
+     * rely on many different lists and maps to keep track of shortest distances, representations, and children.
      */
-
     private static class Node implements Comparable<Node>{
         public long iden;
         public Node previous;
@@ -41,6 +34,8 @@ public class Router {
         }
 
         @Override
+        //Implementing a comparable method in order for comparison in the Priority Queue, according to the
+        //shortest computed distance travelled + circleDistance to the end.
         public int compareTo(Node x) {
             if ((distance + circleDist) - (x.distance + x.circleDist) > 0) {
                 return 1;
@@ -51,6 +46,20 @@ public class Router {
         }
     }
 
+    /**
+     * The method that utilizes A* search in order to find the best possible route to a particular target.
+     * @param g The graph to use.
+     * @param stlon The longitude of the start location.
+     * @param stlat The latitude of the start location.
+     * @param destlon The longitude of the destination location.
+     * @param destlat The latitude of the destination location.
+     *
+     * @variable fringe: The priority queue that sorts Nodes by minimum distance travelled + circleDistance. All
+     * Nodes are added into the fringe from the beginning, and initialized with a traveled distance of infinity.
+     * @variable key: A key to map Node identifiers with Nodes.
+     *
+     * @return A list of node id's in the order visited on the shortest path.
+     */
     public static List<Long> shortestPath(GraphDB g, double stlon, double stlat,
                                           double destlon, double destlat) {
         Queue<Node> fringe = new PriorityQueue<>();
@@ -61,6 +70,7 @@ public class Router {
         fringe.add(place);
         key.put(start, place);
 
+        //Adding all Nodes into the fringe.
         for (long i : g.vertices()) {
             if (i != start) {
                 place = new Node(i, null, Double.POSITIVE_INFINITY, g.distance(i, end));
@@ -70,9 +80,13 @@ public class Router {
         }
 
         Node currentNode = fringe.poll();
+        //Continue while the minimum Node from the PQ is not yet
         while (currentNode.iden != end) {
+            //Getting the neighbors of the currentNode
             for (long i : g.adjacent(currentNode.iden)) {
                 place = key.get(i);
+                //Updating the current distance and previous Node if the new computed distance is
+                //less than the current distance.
                 if (currentNode.distance + g.distance(currentNode.iden, place.iden) < place.distance) {
                     fringe.remove(place);
                     place.distance = currentNode.distance + g.distance(currentNode.iden, place.iden);
@@ -91,7 +105,7 @@ public class Router {
             solution.add(0, currentNode.iden);
         }
 
-        return solution; // FIXME
+        return solution;
     }
 
     /**
@@ -99,6 +113,13 @@ public class Router {
      * @param g The graph to use.
      * @param route The route to translate into directions. Each element
      *              corresponds to a node from the graph in the route.
+     *
+     * @variable gps: The list of NavigationDirections to be shown.
+     * @variable current_bearing: The bearing of the current node.
+     * @variable previous_bearing: The bearing of the previous node.
+     * @variable direction: The direction corresponding to which way to turn.
+     * @variable change: A boolean corresponding to if there was a change in street between two vertices.
+     *
      * @return A list of NavigationDirection objects corresponding to the input
      * route.
      */
@@ -160,6 +181,7 @@ public class Router {
         return null;
     }
 
+    //Getting the directions corresponding to the relative bearing of two sequential vertices.
     private static int getDirections(double bearing) {
         double absBearing = Math.abs(bearing);
 
@@ -303,6 +325,13 @@ public class Router {
         }
     }
 
+    /**
+     * The creation of a searchNode class in order to implement AutoComplete features. The searchNode is used
+     * in the creation of a trie data structure for search.
+     *
+     * @variable value: The letter of the searchNode.
+     * @variable children: The child searchNodes, contained in a mapping of their values to their searchNodes.
+     */
     public static class searchNode {
         public char value;
         public Map<Character, searchNode> children;
@@ -340,7 +369,8 @@ public class Router {
         }
     }
 
-
+    //Traversing all searchNodes in a trie, given a particular starting searchNode, and returning all
+    //searchNodes below it in alphabetical order.
     public static String[] traverseNodes(searchNode newNode) {
         if (newNode.children.isEmpty()) {
             String[] value = {Character.toString(newNode.value)};
@@ -358,26 +388,5 @@ public class Router {
             return modified;
         }
     }
-/*
-    public static List<String> tester(String prefix, searchNode tree) {
-        while (prefix.length() > 0) {
-            char first = prefix.charAt(0);
-            if (!tree.children.keySet().contains(first)) {
-                return new LinkedList<>();
-            } else {
-                tree = tree.children.get(first);
-                prefix = prefix.substring(1);
-            }
-        }
-
-        List<String> names = new ArrayList<>();
-        String[] namelist = traverseNodes(tree);
-        for (String i : namelist) {
-            names.add(i);
-        }
-        return names;
-    }
-
- */
 
 }
