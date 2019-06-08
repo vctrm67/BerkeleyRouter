@@ -31,21 +31,23 @@ public class GraphDB {
         public double lon;
         public double lat;
         public String name;
+        public String actualName;
         public ArrayList<Long> neighbors;
-        public Set<String> streets;
+        public Map<Long, String> streets;
 
         private Node(Map<String, String> newNode) {
             iden = Long.parseLong(newNode.get("id"));
             lon = Double.parseDouble(newNode.get("lon"));
             lat = Double.parseDouble(newNode.get("lat"));
             if (newNode.containsKey("name")) {
-                name = cleanString(newNode.get("name"));
+                actualName = newNode.get("name");
+                name = newNode.get("name").replaceAll("[^A-Za-z0-9]", "").toLowerCase();
             } else {
                 name = null;
             }
 
             neighbors = new ArrayList<>();
-            streets = new HashSet<>();
+            streets = new HashMap<>();
         }
     }
 
@@ -66,6 +68,7 @@ public class GraphDB {
     }
 
     private Map<Long, Node> key = new HashMap<>();
+    public Map<String, String> nameKey = new HashMap<>();
     public int maxStreet = 0;
 
     /**
@@ -80,6 +83,10 @@ public class GraphDB {
     public void addNode(Map<String, String> input) {
         Node node = new Node(input);
         key.put(node.iden, node);
+
+        if (node.name != null) {
+            nameKey.put(node.name, node.actualName);
+        }
     }
 
     public void addEdge(String input1, String input2, String name) {
@@ -89,8 +96,8 @@ public class GraphDB {
         key.get(iden1).neighbors.add(iden2);
         key.get(iden2).neighbors.add(iden1);
 
-        key.get(iden1).streets.add(name);
-        key.get(iden2).streets.add(name);
+        key.get(iden1).streets.put(iden2, name);
+        key.get(iden2).streets.put(iden1, name);
     }
 
     public void removeNode(String v) {
@@ -218,8 +225,15 @@ public class GraphDB {
         return key.get(v).lat;
     }
 
-    Set<String> getStreets(long v) {
+    Map<Long, String> getStreets(long v) {
         return key.get(v).streets;
     }
 
+    List<Long> getNeighbors(long v) {
+        return key.get(v).neighbors;
+    }
+
+    String getName(long v) {
+        return key.get(v).name;
+    }
 }

@@ -1,3 +1,5 @@
+import org.eclipse.jetty.util.ArrayUtil;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,6 +12,8 @@ import java.util.regex.Pattern;
  * The difference between A* and Dijkstra's is only a couple of lines of code, and boils
  * down to the priority you use to order your vertices.
  */
+
+
 public class Router {
     /**
      * Return a List of longs representing the shortest path from the node
@@ -104,26 +108,15 @@ public class Router {
         double previous_bearing = g.bearing(route.get(0), route.get(1));
         int direction = 0;
         boolean change = true;
-        Set<String> currentStreets = new HashSet<>(g.getStreets(route.get(1)));
-        currentStreets.retainAll(g.getStreets(route.get(0)));
-        String currentWay = currentStreets.toArray(new String[0])[0];
+
+        String currentWay = getWay(g, route.get(0), route.get(1));
 
         for (int i = 1; i < route.size(); i++) {
             long current = route.get(i);
             long previous = route.get(i - 1);
-/*
-            for (String k : g.getStreets(current)) {
-                System.out.println(k);
-                System.out.println(route.get(i));
-            }
-            for (String j : currentStreets) {
-                System.out.println(j);
-                System.out.println(route.get(i - 1));
-            }
-            System.out.println("");
 
- */
-            boolean sameStreet = g.getStreets(current).contains(currentWay);
+            String currentStreet = getWay(g, previous, current);
+            boolean sameStreet = currentWay.equals(currentStreet);
             current_bearing = g.bearing(previous, current);
             double bearing_diff = current_bearing - previous_bearing;
 
@@ -137,9 +130,7 @@ public class Router {
             }
 
             if (change) {
-                currentStreets = new HashSet<>(g.getStreets(route.get(i)));
-                currentStreets.retainAll(g.getStreets(route.get(i - 1)));
-                currentWay = currentStreets.toArray(new String[0])[0];
+                currentWay = getWay(g, previous, current);
 
                 NavigationDirection newDirection = new NavigationDirection();
                 newDirection.direction = direction;
@@ -153,10 +144,20 @@ public class Router {
             previous_bearing = current_bearing;
         }
 
-        System.out.println(gps.size());
-
-
         return gps; // FIXME
+    }
+
+    private static String getWay(GraphDB g, long node1, long node2) {
+        Map<Long, String> streets1 = g.getStreets(node1);
+        List<Long> neighbors1 = new ArrayList<>(g.getNeighbors(node1));
+        List<Long> neighbors2 = new ArrayList<>(g.getNeighbors(node2));
+
+        for (int i = 0; i < neighbors1.size(); i++) {
+            if (node2 == neighbors1.get(i)) {
+                return streets1.get(neighbors1.get(i));
+            }
+        }
+        return null;
     }
 
     private static int getDirections(double bearing) {
@@ -301,4 +302,82 @@ public class Router {
             return Objects.hash(direction, way, distance);
         }
     }
+
+    public static class searchNode {
+        public char value;
+        public Map<Character, searchNode> children;
+
+        public searchNode(char a) {
+            value = a;
+            children = new TreeMap<>();
+        }
+    }
+
+    public static searchNode createSearchTree(List<String> names) {
+        searchNode master = new searchNode('a');
+
+        for (String i : names) {
+            addNode(i, master);
+        }
+
+        return master;
+    }
+
+    public static void addNode(String query, searchNode newNode) {
+        char first = query.charAt(0);
+
+        if (!newNode.children.containsKey(first)) {
+            newNode.children.put(first, new searchNode(first));
+            if (query.length() > 1) {
+                addNode(query.substring(1), newNode.children.get(first));
+            }
+        } else {
+            if (query.length() > 1) {
+                addNode(query.substring(1), newNode.children.get(first));
+            } else {
+                newNode.children.put(first, new searchNode(first));
+            }
+        }
+    }
+
+
+    public static String[] traverseNodes(searchNode newNode) {
+        if (newNode.children.isEmpty()) {
+            String[] value = {Character.toString(newNode.value)};
+            return value;
+        } else {
+            String[] modified = {};
+            for (char i : newNode.children.keySet()) {
+                String[] kids = traverseNodes(newNode.children.get(i));
+                for (String j : kids) {
+                    String[] newWord = {Character.toString(newNode.value) + j};
+                    modified = ArrayUtil.add(modified, newWord);
+                }
+            }
+
+            return modified;
+        }
+    }
+/*
+    public static List<String> tester(String prefix, searchNode tree) {
+        while (prefix.length() > 0) {
+            char first = prefix.charAt(0);
+            if (!tree.children.keySet().contains(first)) {
+                return new LinkedList<>();
+            } else {
+                tree = tree.children.get(first);
+                prefix = prefix.substring(1);
+            }
+        }
+
+        List<String> names = new ArrayList<>();
+        String[] namelist = traverseNodes(tree);
+        for (String i : namelist) {
+            names.add(i);
+        }
+        return names;
+    }
+
+ */
+
 }

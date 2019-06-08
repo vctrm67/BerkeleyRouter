@@ -33,6 +33,7 @@ public class TestGraphBuilding {
         graph = new GraphDB(OSM_DB_PATH);
         graphSmall = new GraphDB(OSM_DB_PATH_SMALL);
         initialized = true;
+        System.out.println(graph.nameKey.keySet().size());
     }
 
     /**

@@ -4,12 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.IOException;
@@ -80,6 +75,7 @@ public class MapServer {
     private static Rasterer rasterer;
     private static GraphDB graph;
     private static List<Long> route = new LinkedList<>();
+    private static Router.searchNode masterName = new Router.searchNode('a');
     /* Define any static variables here. Do not define any instance variables of MapServer. */
 
 
@@ -91,6 +87,16 @@ public class MapServer {
     public static void initialize() {
         graph = new GraphDB(OSM_DB_PATH);
         rasterer = new Rasterer();
+
+
+        for (String i : graph.nameKey.keySet()) {
+            Router.addNode(i, masterName);
+        }
+
+        List<String> answers = getLocationsByPrefix("7");
+        for (String i : answers) {
+            System.out.println(i);
+        }
     }
 
     public static void main(String[] args) {
@@ -285,7 +291,31 @@ public class MapServer {
      * cleaned <code>prefix</code>.
      */
     public static List<String> getLocationsByPrefix(String prefix) {
-        return new LinkedList<>();
+        Router.searchNode tree = masterName;
+        String query = prefix;
+
+        while (prefix.length() > 0) {
+            char first = prefix.charAt(0);
+            if (!tree.children.keySet().contains(first)) {
+                return new LinkedList<>();
+            } else {
+                tree = tree.children.get(first);
+                prefix = prefix.substring(1);
+            }
+        }
+
+        List<String> names = new ArrayList<>();
+        List<String> actualNames = new ArrayList<>();
+        String[] namelist = Router.traverseNodes(tree);
+        for (String i : namelist) {
+            names.add(i);
+        }
+
+        for (String i : names) {
+            actualNames.add(graph.nameKey.get(query + i.substring(1)));
+        }
+
+        return actualNames;
     }
 
     /**
@@ -301,6 +331,7 @@ public class MapServer {
      * "id" : Number, The id of the node. <br>
      */
     public static List<Map<String, Object>> getLocations(String locationName) {
+
         return new LinkedList<>();
     }
 
