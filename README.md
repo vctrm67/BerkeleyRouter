@@ -1,6 +1,6 @@
 # BerkeleyRouter
 #### I develop the back end of an application that allows one to dynamically route directions in the Berkeley area. The program parses available street data in OSM XML format and uses it for interactive display.
-Acknowledgements: CS 61B at UC Berkeley for providing the front end. 
+Acknowledgements: UC Berkeley CS 61B (Data Structures and Algorithms) for providing the front end. 
 
 ## Features (I built): 
 **1. Dynamic Image Rastering**
