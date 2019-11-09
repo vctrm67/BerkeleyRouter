@@ -8,21 +8,6 @@ import java.util.*;
 /**
  *  Parses OSM XML files using an XML SAX parser. Used to construct the graph of roads for
  *  pathfinding, under some constraints.
- *  See OSM documentation on
- *  <a href="http://wiki.openstreetmap.org/wiki/Key:highway">the highway tag</a>,
- *  <a href="http://wiki.openstreetmap.org/wiki/Way">the way XML element</a>,
- *  <a href="http://wiki.openstreetmap.org/wiki/Node">the node XML element</a>,
- *  and the java
- *  <a href="https://docs.oracle.com/javase/tutorial/jaxp/sax/parsing.html">SAX parser tutorial</a>.
- *
- *  You may find the CSCourseGraphDB and CSCourseGraphDBHandler examples useful.
- *
- *  The idea here is that some external library is going to walk through the XML
- *  file, and your override method tells Java what to do every time it gets to the next
- *  element in the file. This is a very common but strange-when-you-first-see it pattern.
- *  It is similar to the Visitor pattern we discussed for graphs.
- *
- *  @author Alan Yao, Maurice Lee
  */
 public class GraphBuildingHandler extends DefaultHandler {
     /**
